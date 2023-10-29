@@ -31,21 +31,22 @@ services:
       # blocks until kafka is reachable
       kafka-topics --bootstrap-server kafka:29092 --list
       echo -e 'Creating kafka topics'
-      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic preprocessed --replication-factor 1 --partitions 1
-      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic p_arrival --replication-factor 1 --partitions 1
-      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic prediction --replication-factor 1 --partitions 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic preprocessed --replication-factor 1 --partitions 3
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic p_arrival --replication-factor 1 --partitions 3
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic prediction --replication-factor 1 --partitions 3
       echo -e 'Successfully created the following topics:'
       kafka-topics --bootstrap-server kafka:29092 --list
       "
-  eews-ws-rest:
+
+  eews-producer:
     depends_on:
       - init-kafka
     build:
-      context: ../ws-rest
+      context: ../producer
       dockerfile: Dockerfile
-    container_name: eews-ws-rest
+    container_name: eews-producer
     env_file:
-      - .ws-rest.env
+      - .producer.env
     ports:
       - '8082:8082'
 
@@ -61,14 +62,14 @@ services:
     ports:
       - '8081:8081'
 
-  eews-producer:
+  eews-ws-rest:
     depends_on:
-      - init-kafka
+      - eews-producer
     build:
-      context: ../producer
+      context: ../ws-rest
       dockerfile: Dockerfile
-    container_name: eews-producer
+    container_name: eews-ws-rest
     env_file:
-      - .producer.env
+      - .ws-rest.env
     ports:
       - '8080:8080'
