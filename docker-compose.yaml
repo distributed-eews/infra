@@ -38,9 +38,24 @@ services:
       kafka-topics --bootstrap-server kafka:29092 --list
       "
 
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - '6379:6379'
+
+  eews-seeder:
+    depends_on:
+      - redis
+    image: pragusga/eews:seeder
+    container_name: eews-seeder
+    environment:
+      REDIS_HOST: redis
+
   eews-producer:
     depends_on:
       - init-kafka
+      - eews-seeder
     image: pragusga/eews:producer
     container_name: eews-producer
     env_file:
@@ -61,6 +76,7 @@ services:
   eews-ws-rest:
     depends_on:
       - eews-producer
+      - eews-seeder
     image: pragusga/eews:ws-rest
     container_name: eews-ws-rest
     env_file:
