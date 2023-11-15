@@ -1,6 +1,7 @@
 version: '3'
 services:
   eews-zookeeper:
+    restart: always
     image: confluentinc/cp-zookeeper
     container_name: eews-zookeeper
     ports:
@@ -9,20 +10,58 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
 
   eews-kafka:
+    restart: always
     container_name: eews-kafka
     image: confluentinc/cp-kafka
     depends_on:
       - eews-zookeeper
     ports:
-      - '9092:9092'
-    expose:
-      - '29092'
+      - '8097:8097'
+    # expose:
+    #   - '29092'
     environment:
+      KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'eews-zookeeper:2181'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://eews-kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '1'
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://eews-kafka:9092,PLAINTEXT_HOST://localhost:8097
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '3'
+      KAFKA_MIN_INSYNC_REPLICAS: '1'
+
+  eews-kafka-2:
+    restart: always
+    container_name: eews-kafka-2
+    image: confluentinc/cp-kafka
+    user: root
+    depends_on:
+      - eews-zookeeper
+    ports:
+      - '8098:8098'
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: 'eews-zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://eews-kafka-2:9092,PLAINTEXT_HOST://localhost:8098
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '3'
+      KAFKA_MIN_INSYNC_REPLICAS: '1'
+
+  eews-kafka-3:
+    restart: always
+    container_name: eews-kafka-3
+    image: confluentinc/cp-kafka
+    user: root
+    depends_on:
+      - eews-zookeeper
+    ports:
+      - '8099:8099'
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: 'eews-zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://eews-kafka-3:9092,PLAINTEXT_HOST://localhost:8099
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '3'
       KAFKA_MIN_INSYNC_REPLICAS: '1'
 
   eews-init-kafka:
@@ -30,18 +69,20 @@ services:
     image: confluentinc/cp-kafka:6.1.1
     depends_on:
       - eews-kafka
+      - eews-kafka-2
+      - eews-kafka-3
     entrypoint: ['/bin/sh', '-c']
     command: |
       "
       # blocks until kafka is reachable
-      kafka-topics --bootstrap-server eews-kafka:29092 --list
+      kafka-topics --bootstrap-server eews-kafka:9092 --list
       echo -e 'Creating kafka topics'
-      kafka-topics --bootstrap-server eews-kafka:29092 --create --if-not-exists --topic preprocessed --replication-factor 1 --partitions 3
-      kafka-topics --bootstrap-server eews-kafka:29092 --create --if-not-exists --topic p_arrival --replication-factor 1 --partitions 3
-      kafka-topics --bootstrap-server eews-kafka:29092 --create --if-not-exists --topic pick --replication-factor 1 --partitions 3
-      kafka-topics --bootstrap-server eews-kafka:29092 --create --if-not-exists --topic prediction --replication-factor 1 --partitions 1
+      kafka-topics --bootstrap-server eews-kafka:9092 --create --if-not-exists --topic preprocessed --replication-factor 1 --partitions 3
+      kafka-topics --bootstrap-server eews-kafka:9092 --create --if-not-exists --topic p_arrival --replication-factor 1 --partitions 3
+      kafka-topics --bootstrap-server eews-kafka:9092 --create --if-not-exists --topic pick --replication-factor 1 --partitions 3
+      kafka-topics --bootstrap-server eews-kafka:9092 --create --if-not-exists --topic prediction --replication-factor 1 --partitions 1
       echo -e 'Successfully created the following topics:'
-      kafka-topics --bootstrap-server eews-kafka:29092 --list
+      kafka-topics --bootstrap-server eews-kafka:9092 --list
       "
 
   eews-redis:
@@ -69,52 +110,71 @@ services:
     ports:
       - '8082:8082'
 
-  eews-queue:
+  eews-queue-1:
     depends_on:
       - eews-init-kafka
     image: pragusga/eews:queue
-    container_name: eews-queue
+    container_name: eews-queue-1
     env_file:
       - .queue.env
 
-  eews-picker:
+  eews-queue-2:
+    depends_on:
+      - eews-init-kafka
+    image: pragusga/eews:queue
+    container_name: eews-queue-2
+    env_file:
+      - .queue.env
+
+  eews-queue-3:
+    depends_on:
+      - eews-init-kafka
+    image: pragusga/eews:queue
+    container_name: eews-queue-3
+    env_file:
+      - .queue.env
+
+  eews-picker-1:
     depends_on:
       - eews-nginx
     image: pragusga/eews:picker
-    # build:
-    #   context: ../picker
-    #   dockerfile: Dockerfile
-    # volumes:
-    #   - ../picker/app/processor.py:/app/app/processor.py
-    container_name: eews-picker
+    container_name: eews-picker-1
     env_file:
       - .picker.env
-    # networks:
-    #   - eews
+
+  eews-picker-2:
+    depends_on:
+      - eews-nginx
+    image: pragusga/eews:picker
+    container_name: eews-picker-2
+    env_file:
+      - .picker.env
+
+  eews-picker-3:
+    depends_on:
+      - eews-nginx
+    image: pragusga/eews:picker
+    container_name: eews-picker-3
+    env_file:
+      - .picker.env
 
   eews-ps-arrival-1:
     image: pragusga/eews:ps-arrival
     container_name: eews-ps-arrival-1
     ports:
       - 8084:3000
-    # networks:
-    #   - eews
 
   eews-ps-arrival-2:
     image: pragusga/eews:ps-arrival
     container_name: eews-ps-arrival-2
     ports:
       - 8085:3000
-    # networks:
-    #   - eews
 
   eews-ps-arrival-3:
     image: pragusga/eews:ps-arrival
     container_name: eews-ps-arrival-3
     ports:
       - 8086:3000
-    # networks:
-    #   - eews
 
   eews-nginx:
     image: nginx
@@ -127,8 +187,6 @@ services:
       - eews-ps-arrival-1
       - eews-ps-arrival-2
       - eews-ps-arrival-3
-    # networks:
-    #   - eews
 
   eews-ws-rest:
     depends_on:
@@ -140,5 +198,34 @@ services:
       - .ws-rest.env
     ports:
       - '8080:8080'
-# networks:
-#   eews:
+
+  eews-prometheus:
+    container_name: eews-prometheus
+    image: prom/prometheus:v2.24.0
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - 9090:9090
+    restart: always
+
+  eews-grafana:
+    image: grafana/grafana:latest
+    container_name: eews-grafana
+    ports:
+      - '3001:3001'
+    environment:
+      GF_SERVER_HTTP_PORT: 3001
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: adminpassword
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
+volumes:
+  grafana-storage:
+  prometheus_data:
