@@ -1,0 +1,96 @@
+version: '3'
+services:
+  eews-zookeeper:
+    restart: always
+    image: confluentinc/cp-zookeeper
+    container_name: eews-zookeeper
+    ports:
+      - '2181:2181'
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  eews-kafka:
+    restart: always
+    container_name: eews-kafka
+    image: confluentinc/cp-kafka
+    depends_on:
+      - eews-zookeeper
+    ports:
+      - '8097:8097'
+
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'eews-zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://eews-kafka:9092,PLAINTEXT_HOST://localhost:8097
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '1'
+      KAFKA_MIN_INSYNC_REPLICAS: '1'
+
+  eews-init-kafka:
+    container_name: eews-init-kafka
+    image: confluentinc/cp-kafka:6.1.1
+    depends_on:
+      - eews-kafka
+    entrypoint: ['/bin/sh', '-c']
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics --bootstrap-server eews-kafka:9092 --list
+      echo -e 'Creating kafka topics'
+      kafka-topics --bootstrap-server eews-kafka:9092 --create --if-not-exists --topic preprocessed --replication-factor 1 --partitions 3
+      kafka-topics --bootstrap-server eews-kafka:9092 --create --if-not-exists --topic p_arrival --replication-factor 1 --partitions 3
+      kafka-topics --bootstrap-server eews-kafka:9092 --create --if-not-exists --topic pick --replication-factor 1 --partitions 3
+      kafka-topics --bootstrap-server eews-kafka:9092 --create --if-not-exists --topic prediction --replication-factor 1 --partitions 1
+      echo -e 'Successfully created the following topics:'
+      kafka-topics --bootstrap-server eews-kafka:9092 --list
+      "
+
+  eews-redis:
+    image: redis
+    container_name: eews-redis
+    ports:
+      - '6379:6379'
+
+  eews-seeder:
+    depends_on:
+      - eews-redis
+    image: pragusga/eews:seeder
+    container_name: eews-seeder
+    environment:
+      REDIS_HOST: eews-redis
+
+  eews-producer:
+    depends_on:
+      - eews-init-kafka
+      - eews-seeder
+    image: pragusga/eews:producer
+    container_name: eews-producer
+    env_file:
+      - .producer.env
+    ports:
+      - '8082:8082'
+
+  eews-queue:
+    depends_on:
+      - eews-init-kafka
+    image: pragusga/eews:queue
+    container_name: eews-queue
+    env_file:
+      - .queue.env
+
+  eews-picker:
+    depends_on:
+      - eews-ml
+    image: pragusga/eews:picker
+    container_name: eews-picker
+    env_file:
+      - .picker.p.env
+
+  eews-ml:
+    image: pragusga/eews:ml
+    container_name: eews-ml
+    ports:
+      - 3000:3000
+    env_file:
+      - .ml.env
