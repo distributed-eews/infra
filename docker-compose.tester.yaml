@@ -60,16 +60,14 @@ services:
     environment:
       REDIS_HOST: eews-redis
 
-  eews-producer:
+  eews-tester:
     depends_on:
       - eews-init-kafka
       - eews-seeder
-    image: pragusga/eews:producer
-    container_name: eews-producer
+    image: pragusga/eews:tester
+    container_name: eews-tester
     env_file:
-      - .producer.env
-    ports:
-      - '8082:8082'
+      - .tester.env
 
   eews-queue:
     depends_on:
@@ -82,8 +80,6 @@ services:
   eews-picker:
     depends_on:
       - eews-ml
-      - eews-queue
-      - eews-mongo
     image: pragusga/eews:picker
     container_name: eews-picker
     env_file:
@@ -92,20 +88,18 @@ services:
   eews-ml:
     image: pragusga/eews:ml
     container_name: eews-ml
-    depends_on:
-      - eews-redis
     ports:
-      - 3000:3000
+      - 8084:3000
     env_file:
       - .ml.env
 
-  eews-mongo:
-    image: mongo:latest
-    container_name: eews-mongo
+  eews-ws-rest:
+    depends_on:
+      - eews-tester
+      - eews-seeder
+    image: pragusga/eews:ws-rest
+    container_name: eews-ws-rest
+    env_file:
+      - .ws-rest.env
     ports:
-      - '27017:27017'
-    volumes:
-      - mongodb_data:/data/db
-
-volumes:
-  mongodb_data:
+      - '8080:8080'

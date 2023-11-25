@@ -136,6 +136,7 @@ services:
   eews-picker-1:
     depends_on:
       - eews-nginx
+      - eews-mongo
     image: pragusga/eews:picker
     container_name: eews-picker-1
     env_file:
@@ -144,6 +145,7 @@ services:
   eews-picker-2:
     depends_on:
       - eews-nginx
+      - eews-mongo
     image: pragusga/eews:picker
     container_name: eews-picker-2
     env_file:
@@ -152,6 +154,7 @@ services:
   eews-picker-3:
     depends_on:
       - eews-nginx
+      - eews-mongo
     image: pragusga/eews:picker
     container_name: eews-picker-3
     env_file:
@@ -160,6 +163,8 @@ services:
   eews-ml-1:
     image: pragusga/eews:ml
     container_name: eews-ml-1
+    depends_on:
+      - eews-redis
     ports:
       - 8084:3000
     env_file:
@@ -168,6 +173,8 @@ services:
   eews-ml-2:
     image: pragusga/eews:ml
     container_name: eews-ml-2
+    depends_on:
+      - eews-redis
     ports:
       - 8085:3000
     env_file:
@@ -176,6 +183,8 @@ services:
   eews-ml-3:
     image: pragusga/eews:ml
     container_name: eews-ml-3
+    depends_on:
+      - eews-redis
     ports:
       - 8086:3000
     env_file:
@@ -231,6 +240,15 @@ services:
     volumes:
       - grafana-storage:/var/lib/grafana
 
+  eews-mongo:
+    image: mongo:latest
+    container_name: eews-mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+
 volumes:
   grafana-storage:
   prometheus_data:
+  mongodb_data:

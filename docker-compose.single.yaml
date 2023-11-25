@@ -82,6 +82,7 @@ services:
   eews-picker:
     depends_on:
       - eews-ml
+      - eews-mongo
     image: pragusga/eews:picker
     container_name: eews-picker
     env_file:
@@ -90,6 +91,8 @@ services:
   eews-ml:
     image: pragusga/eews:ml
     container_name: eews-ml
+    depends_on:
+      - eews-redis
     ports:
       - 8084:3000
     env_file:
@@ -105,3 +108,14 @@ services:
       - .ws-rest.env
     ports:
       - '8080:8080'
+
+  eews-mongo:
+    image: mongo:latest
+    container_name: eews-mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:
