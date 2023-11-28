@@ -63,6 +63,16 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '3'
       KAFKA_MIN_INSYNC_REPLICAS: '1'
 
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    container_name: kafka-ui
+    ports:
+      - '8000:8080'
+    restart: always
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: eews-kafka:9092
+
   eews-init-kafka:
     container_name: eews-init-kafka
     image: confluentinc/cp-kafka:6.1.1
@@ -211,7 +221,7 @@ services:
     env_file:
       - .ws-rest.env
     ports:
-      - '8080:8080'
+      - '80:8080'
 
   eews-prometheus:
     container_name: eews-prometheus
