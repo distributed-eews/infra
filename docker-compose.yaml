@@ -99,6 +99,8 @@ services:
     container_name: eews-redis
     ports:
       - '6379:6379'
+    volumes:
+      - redis_data:/data
 
   eews-seeder:
     depends_on:
@@ -262,3 +264,4 @@ volumes:
   grafana-storage:
   prometheus_data:
   mongodb_data:
+  redis_data:

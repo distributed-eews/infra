@@ -61,12 +61,13 @@ services:
     container_name: eews-seeder
     environment:
       REDIS_HOST: eews-redis
+      ENV: TEST
 
   eews-producer:
     depends_on:
       - eews-init-kafka
       - eews-seeder
-    image: pragusga/eews:producer
+    image: pragusga/eews:producer-tester
     container_name: eews-producer
     env_file:
       - .producer.env
