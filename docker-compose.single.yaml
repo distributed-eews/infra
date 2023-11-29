@@ -4,8 +4,8 @@ services:
     restart: always
     image: confluentinc/cp-zookeeper
     container_name: eews-zookeeper
-    ports:
-      - '2181:2181'
+    # ports:
+    #   - '2181:2181'
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
 
@@ -49,8 +49,8 @@ services:
   eews-redis:
     image: redis
     container_name: eews-redis
-    ports:
-      - '6379:6379'
+    # ports:
+    #   - '6379:6379'
     volumes:
       - redis_data:/data
 
@@ -70,8 +70,8 @@ services:
     container_name: eews-producer
     env_file:
       - .producer.env
-    ports:
-      - '8082:8082'
+    # ports:
+    #   - '8082:8082'
 
   eews-queue:
     depends_on:
@@ -95,8 +95,8 @@ services:
     container_name: eews-ml
     depends_on:
       - eews-redis
-    ports:
-      - 8084:3000
+    # ports:
+    #   - 8084:3000
     env_file:
       - .ml.env
 
@@ -109,13 +109,13 @@ services:
     env_file:
       - .ws-rest.env
     ports:
-      - '8080:8080'
+      - '80:8080'
 
   eews-mongo:
     image: mongo:latest
     container_name: eews-mongo
-    ports:
-      - '27017:27017'
+    # ports:
+    #   - '27017:27017'
     volumes:
       - mongodb_data:/data/db
 
