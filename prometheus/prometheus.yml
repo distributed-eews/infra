@@ -10,4 +10,9 @@ scrape_configs:
     metrics_path: /prometheus
     static_configs:
       - targets:
-          - ws-rest:8080
+          - host.docker.internal:80
+  - job_name: picker
+    metrics_path: /prometheus
+    static_configs:
+      - targets:
+          - host.docker.internal:8012

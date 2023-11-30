@@ -4,8 +4,6 @@ services:
     restart: always
     image: confluentinc/cp-zookeeper
     container_name: eews-zookeeper
-    # ports:
-    #   - '2181:2181'
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
 
@@ -49,8 +47,6 @@ services:
   eews-redis:
     image: redis
     container_name: eews-redis
-    # ports:
-    #   - '6379:6379'
     volumes:
       - redis_data:/data
 
@@ -62,6 +58,8 @@ services:
     environment:
       REDIS_HOST: eews-redis
       ENV: TEST
+      REPLICA: 80
+      TRESHOLD_DISTANCE: 500
 
   eews-producer:
     depends_on:
@@ -71,8 +69,6 @@ services:
     container_name: eews-producer
     env_file:
       - .producer.env
-    # ports:
-    #   - '8082:8082'
 
   eews-queue:
     depends_on:
@@ -90,14 +86,14 @@ services:
     container_name: eews-picker
     env_file:
       - .picker.p.env
+    # ports:
+    #   - 8012:8012
 
   eews-ml:
     image: pragusga/eews:ml
     container_name: eews-ml
     depends_on:
       - eews-redis
-    # ports:
-    #   - 8084:3000
     env_file:
       - .ml.env
 
@@ -115,8 +111,6 @@ services:
   eews-mongo:
     image: mongo:latest
     container_name: eews-mongo
-    # ports:
-    #   - '27017:27017'
     volumes:
       - mongodb_data:/data/db
 
@@ -130,6 +124,35 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: eews-kafka:9092
 
+  eews-prometheus:
+    container_name: eews-prometheus
+    image: prom/prometheus:v2.24.0
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    restart: always
+    # ports:
+    #   - '9090:9090'
+
+  eews-grafana:
+    image: grafana/grafana:latest
+    container_name: eews-grafana
+    ports:
+      - '3001:3001'
+    environment:
+      GF_SERVER_HTTP_PORT: 3001
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: adminpassword
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
 volumes:
   mongodb_data:
   redis_data:
+  grafana-storage:
+  prometheus_data:
