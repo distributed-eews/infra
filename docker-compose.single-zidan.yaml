@@ -83,7 +83,7 @@ services:
     depends_on:
       - eews-ml
       - eews-mongo
-    image: pragusga/eews:picker
+    image: pragusga/eews:picker-zidan
     container_name: eews-picker
     env_file:
       - .picker.p.env
