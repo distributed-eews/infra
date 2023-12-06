@@ -108,7 +108,7 @@ services:
     env_file:
       - .ws-rest.env
     ports:
-      - '80:8080'
+      - '8080:8080'
 
   eews-mongo:
     image: mongo:latest
@@ -117,6 +117,16 @@ services:
     #   - '27017:27017'
     volumes:
       - mongodb_data:/data/db
+
+  eews-frontend:
+    depends_on:
+      - eews-ws-rest
+    image: pragusga/eews:frontend
+    container_name: eews-frontend
+    env_file:
+      - .frontend.env
+    ports:
+      - '80:3002'
 
   kafka-ui:
     image: provectuslabs/kafka-ui
