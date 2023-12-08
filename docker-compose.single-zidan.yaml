@@ -103,7 +103,10 @@ services:
       - eews-producer
       - eews-seeder
       - eews-kafka
-    image: pragusga/eews:ws-rest
+    # image: pragusga/eews:ws-rest
+    build:
+      context: ../ws-rest
+      dockerfile: Dockerfile
     container_name: eews-ws-rest
     env_file:
       - .ws-rest.env
@@ -121,7 +124,10 @@ services:
   eews-frontend:
     depends_on:
       - eews-ws-rest
-    image: pragusga/eews:frontend
+    # image: pragusga/eews:frontend
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
     container_name: eews-frontend
     env_file:
       - .frontend.env

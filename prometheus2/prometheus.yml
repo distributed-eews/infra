@@ -15,7 +15,16 @@ scrape_configs:
     metrics_path: /prometheus
     static_configs:
       - targets:
-          - eews-picker:8012
+          - eews-picker-1:8012
+          - eews-picker-2:8012
+          - eews-picker-3:8012
+  - job_name: queue
+    metrics_path: /prometheus
+    static_configs:
+      - targets:
+          - eews-queue-1:8012
+          - eews-queue-2:8012
+          - eews-queue-3:8012
   - job_name: producer
     metrics_path: /prometheus
     static_configs:
