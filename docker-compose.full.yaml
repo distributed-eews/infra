@@ -203,10 +203,10 @@ services:
   eews-frontend:
     depends_on:
       - eews-ws-rest
-    image: pragusga/eews:frontend
-    # build:
-    #   context: ../frontend
-    #   dockerfile: Dockerfile
+    # image: pragusga/eews:frontend
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
     container_name: eews-frontend
     env_file:
       - .frontend.env
