@@ -157,10 +157,10 @@ services:
       - eews-producer
       - eews-seeder
       - eews-nginx
-    # image: pragusga/eews:ws-rest
-    build:
-      context: ../ws-rest
-      dockerfile: Dockerfile
+    image: pragusga/eews:ws-rest
+    # build:
+    #   context: ../ws-rest
+    #   dockerfile: Dockerfile
     container_name: eews-ws-rest
     env_file:
       - .ws-rest.env
